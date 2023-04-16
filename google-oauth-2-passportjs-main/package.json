@@ -1,0 +1,35 @@
+{
+  "name": "google-oauth",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www",
+    "dev": "nodemon ./bit/www",
+    "install": "node-gyp rebuild",
+    "build": "node-gyp rebuild",
+    "clean": "node-gyp clean"
+  },
+  "dependencies": {
+    "clipboard": "^2.0.11",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "http-errors": "~1.6.3",
+    "jade": "~1.11.0",
+    "morgan": "~1.9.1",
+    "node-addon-api": "^5.0.0",
+    "node-gyp": "^9.3.0",
+    "passport": "^0.4.1",
+    "passport-google-oauth20": "^2.0.0",
+    "pg": "^8.8.0",
+    "selfcore": "^1.1.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  },
+  "main": "app.js",
+  "author": "",
+  "license": "ISC",
+  "gypfile": true,
+  "description": ""
+}
