@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>JSON Data</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div>
+        <form>
+            <label>Baseline BGL:</label>
+            <input type="number" step="0.1" name="baselineBGL" id="baselineBGL"><br><br>
+
+            <label>Protein:</label>
+            <input type="number" step="0.1" name="protein" id="protein"><br><br>
+
+            <label>Fiber:</label>
+            <input type="number" step="0.1" name="fiber" id="fiber"><br><br>
+
+            <label>Fat:</label>
+            <input type="number" step="0.1" name="fat" id="fat"><br><br>
+
+            <label>Start Eat:</label>
+            <input type="datetime-local" name="start_eat" id="start_eat"><br><br>
+
+            <label>Eat Type:</label>
+            <input type="text" name="eat_type" id="eat_type"><br><br>
+
+            <label>Insulin Quantity:</label>
+            <input type="number" step="0.1" name="insulinQuantity" id="insulinQuantity"><br><br>
+
+            <div id="gi-container">
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label">Eat 1:</label>
+                    <div class="col-sm-3">
+                        gi: <input type="number" class="form-control gi" name="gi[]" placeholder="GI" min="0" max="100"
+                            step="1" required>
+                    </div>
+                    <div class="col-sm-3">
+                        carbohydrate: <input type="number" class="form-control carbohydrate" name="carbohydrate[]"
+                            placeholder="Carbohydrate" min="0" max="100" step="1" required>
+                    </div>
+                    <div class="col-sm-2">
+                        <button type="button" class="btn btn-success add-gi"
+                            onclick="addGiAndCarbohydrateInput()">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="giValues"></div>
+
+            <label for="period">Period:</label>
+            <select id="period" name="period" required>
+                <option value="120">120</option>
+                <option value="160">160</option>
+                <option value="180">180</option>
+            </select><br>
+
+            <label for="rate">Min:</label>
+            <select id="rate" name="rate" required>
+                <option value="2">2</option>
+                <option value="3">3</option>
+            </select><br>
+
+            <button type="button" onclick="postData()">Submit</button>
+        </form>
+    </div>
+    <div>
+        <canvas id="myChart"></canvas>
+    </div>
+</body>
+
+</html>
+
+<script>
+
+    document.addEventListener('DOMContentLoaded', () => {
+        postData();
+    });
+
+    let giCount = 1;
+
+    const ctx = document.getElementById('myChart').getContext('2d');
+
+    var chart = new Chart(ctx, {});
+
+    
+    function updateChart(data) {
+        // check if chart data is undefined
+
+        if (!chart.data) {
+            chart.data = {
+                labels: [],
+                datasets: [{
+                    label: 'BGL Prediction',
+                    data: [],
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1,
+                    pointRadius: 0
+                }]
+            },
+        options = {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true,
+                        precision: 0
+                    },
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'BGL Value'
+                    }
+                }],
+                xAxes: [{
+                    type: 'time',
+                    time: {
+                        unit: 'minute',
+                        displayFormats: {
+                            minute: 'h:mm a'
+                        }
+                    },
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Time'
+                    }
+                }]
+            }
+        }
+        }
+
+        const timeArray = Object.values(data).map(d => d.time);
+        const valueArray = Object.values(data).map(d => d.bglPrediction);
+
+        // Update chart with new data
+        chart.data.labels = timeArray;
+        chart.data.datasets[0].data = valueArray;
+        chart.update();
+    }
+
+    function addGiAndCarbohydrateInput() {
+        var giContainer = document.getElementById("gi-container");
+        var giCount = giContainer.getElementsByClassName("form-group").length;
+
+        // Create a new GI and Carbohydrate input
+        var newInput = `
+      <div class="form-group row">
+        <label class="col-sm-2 col-form-label">Eat ${giCount + 1}:</label>
+        <div class="col-sm-3">
+            gi:  <input type="number" class="form-control gi" name="gi[]" placeholder="GI" min="0" max="100" step="1" required>
+        </div>
+        <div class="col-sm-3">
+            carbohydrate:  <input type="number" class="form-control carbohydrate" name="carbohydrate[]" placeholder="Carbohydrate" min="0" max="100" step="1" required>
+        </div>
+        <div class="col-sm-2">
+          <button type="button" class="btn btn-danger remove-gi" onclick="removeGiAndCarbohydrateInput(this)">-</button>
+        </div>
+      </div>
+    `;
+
+        // Add the new input to the container
+        giContainer.insertAdjacentHTML("beforeend", newInput);
+    }
+
+    function removeGiAndCarbohydrateInput(button) {
+        // Get the parent node of the button (which is the GI and Carbohydrate input row)
+        var parent = button.parentNode.parentNode;
+
+        // Remove the row from the container
+        parent.parentNode.removeChild(parent);
+
+        // Update the labels of the remaining inputs
+        var giInputs = document.getElementsByClassName("gi");
+        for (var i = 0; i < giInputs.length; i++) {
+            giInputs[i].parentNode.parentNode.getElementsByTagName("label")[0].innerHTML = `Eat ${i + 1}:`;
+        }
+    }
+
+    function postData() {
+        const baselineBGL = document.getElementById("baselineBGL")
+        const protein = document.getElementById("protein")
+        const fiber = document.getElementById("fiber")
+        const fat = document.getElementById("fat")
+        const start_eat = document.getElementById("start_eat")
+        const eat_type = document.getElementById("eat_type")
+        const insulinQuantity = document.getElementById("insulinQuantity")
+        const period = document.getElementById("period")
+        const rate = document.getElementById("rate")
+
+        console.error(baselineBGL.value,
+            protein.value,
+            fiber.value,
+            fat.value,
+            start_eat.value,
+            eat_type.value,
+            insulinQuantity.value);
+        if (baselineBGL && protein && fiber && fat && start_eat && eat_type && insulinQuantity && period && rate) {
+            const data = {
+                data: {
+                    baselineBGL: parseFloat(baselineBGL.value),
+                    protein: parseFloat(protein.value),
+                    fiber: parseFloat(fiber.value),
+                    fat: parseFloat(fat.value),
+                    start_eat: start_eat.value,
+                    eat_type: eat_type.value,
+                    insulinQuantity: parseFloat(insulinQuantity.value)
+                },
+                eat: getGisAndCarbohydrates(),
+                time: {
+                    period: parseInt(period.value),
+                    rate: parseInt(rate.value)
+                }
+            };
+
+            fetch('http://localhost:3000/newdatas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    // update chart with new data
+
+                    updateChart(myChart, data);
+
+                })
+                .catch((error) => console.error(error));
+        }
+        else {
+            console.error('One or more input fields not found.');
+        }
+
+    }
+
+
+    function getGisAndCarbohydrates() {
+        const giElements = document.querySelectorAll('.gi');
+        const carbElements = document.querySelectorAll('.carbohydrate');
+        const gisAndCarbs = [];
+
+        for (let i = 0; i < giElements.length; i++) {
+            const gi = parseInt(giElements[i].value);
+            const carb = parseInt(carbElements[i].value);
+
+            if (!isNaN(gi) && !isNaN(carb)) {
+                gisAndCarbs.push({ gi: gi, carbohydrate: carb });
+            }
+        }
+
+        return gisAndCarbs;
+    }
+
+
+
+
+</script>
